@@ -26,7 +26,7 @@ func getIcon(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		iconCache[name] = data		
+		iconCache[name] = data
 	}
 
 	mime := ""

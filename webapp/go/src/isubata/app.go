@@ -319,6 +319,7 @@ func fetchUnread(c echo.Context) error {
 
 	time.Sleep(time.Second)
 
+	// idだけ
 	channels, err := queryChannels()
 	if err != nil {
 		return err
