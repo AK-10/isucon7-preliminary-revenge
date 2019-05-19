@@ -53,11 +53,13 @@ func getMessage(c echo.Context) error {
 		return err
 	}
 
-	response := make([]map[string]interface{}, 100)
+	response := make([]map[string]interface{}, 0)
 	rows, err := db.Query("SELECT m.id, m.content, m.created_at, u.name, u.display_name, u.avatar_icon FROM message m INNER JOIN user u ON m.user_id = u.id WHERE m.id > ? AND m.channel_id = ? ORDER BY m.id DESC LIMIT 100", lastID, chanID)
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
+	
 	for rows.Next() {
 		var message Message
 		var user User
