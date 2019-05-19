@@ -1,4 +1,3 @@
-git pull origin master
 cd ~/isubata/webapp/go
 make
 sudo systemctl restart isubata.golang.service
