@@ -177,44 +177,6 @@ func getIndex(c echo.Context) error {
 	})
 }
 
-type ChannelInfo struct {
-	ID          int64     `db:"id"`
-	Name        string    `db:"name"`
-	Description string    `db:"description"`
-	UpdatedAt   time.Time `db:"updated_at"`
-	CreatedAt   time.Time `db:"created_at"`
-}
-
-func getChannel(c echo.Context) error {
-	user, err := ensureLogin(c)
-	if user == nil {
-		return err
-	}
-	cID, err := strconv.Atoi(c.Param("channel_id"))
-	if err != nil {
-		return err
-	}
-	channels := []ChannelInfo{}
-	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
-	if err != nil {
-		return err
-	}
-
-	var desc string
-	for _, ch := range channels {
-		if ch.ID == int64(cID) {
-			desc = ch.Description
-			break
-		}
-	}
-	return c.Render(http.StatusOK, "channel", map[string]interface{}{
-		"ChannelID":   cID,
-		"Channels":    channels,
-		"User":        user,
-		"Description": desc,
-	})
-}
-
 func getRegister(c echo.Context) error {
 	return c.Render(http.StatusOK, "register", map[string]interface{}{
 		"ChannelID": 0,
@@ -327,6 +289,7 @@ func queryChannels() ([]int64, error) {
 	return res, err
 }
 
+// 既読
 func queryHaveRead(userID, chID int64) (int64, error) {
 	type HaveRead struct {
 		UserID    int64     `db:"user_id"`
@@ -372,11 +335,11 @@ func fetchUnread(c echo.Context) error {
 		var cnt int64
 		if lastID > 0 {
 			err = db.Get(&cnt,
-				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
+				"SELECT COUNT(id) as cnt FROM message WHERE channel_id = ? AND ? < id",
 				chID, lastID)
 		} else {
 			err = db.Get(&cnt,
-				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?",
+				"SELECT COUNT(id) as cnt FROM message WHERE channel_id = ?",
 				chID)
 		}
 		if err != nil {
@@ -415,7 +378,7 @@ func getHistory(c echo.Context) error {
 
 	const N = 20
 	var cnt int64
-	err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", chID)
+	err = db.Get(&cnt, "SELECT COUNT(id) as cnt FROM message WHERE channel_id = ?", chID)
 	if err != nil {
 		return err
 	}
@@ -578,6 +541,7 @@ func postProfile(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		iconCache[avatarName] = avatarData
 		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
 		if err != nil {
 			return err
@@ -594,17 +558,26 @@ func postProfile(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, "/")
 }
 
+var iconCache = map[string]([]byte){}
+
 func getIcon(c echo.Context) error {
 	var name string
 	var data []byte
-	err := db.QueryRow("SELECT name, data FROM image WHERE name = ?",
-		c.Param("file_name")).Scan(&name, &data)
-	if err == sql.ErrNoRows {
-		return echo.ErrNotFound
+	if len(iconCache[c.Param("file_name")]) > 0 {
+		name = c.Param("file_name")
+		data = iconCache[c.Param("file_name")]
+	} else {
+		err := db.QueryRow("SELECT name, data FROM image WHERE name = ?",
+			c.Param("file_name")).Scan(&name, &data)
+		if err == sql.ErrNoRows {
+			return echo.ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		iconCache[name] = data		
 	}
-	if err != nil {
-		return err
-	}
+
 
 	mime := ""
 	switch true {
