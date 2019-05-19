@@ -541,6 +541,7 @@ func postProfile(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		iconCache[avatarName] = avatarData
 		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
 		if err != nil {
 			return err
@@ -557,17 +558,26 @@ func postProfile(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, "/")
 }
 
+var iconCache = map[string]([]byte){}
+
 func getIcon(c echo.Context) error {
 	var name string
 	var data []byte
-	err := db.QueryRow("SELECT name, data FROM image WHERE name = ?",
-		c.Param("file_name")).Scan(&name, &data)
-	if err == sql.ErrNoRows {
-		return echo.ErrNotFound
+	if len(iconCache[c.Param("file_name")]) > 0 {
+		name = c.Param("file_name")
+		data = iconCache[c.Param("file_name")]
+	} else {
+		err := db.QueryRow("SELECT name, data FROM image WHERE name = ?",
+			c.Param("file_name")).Scan(&name, &data)
+		if err == sql.ErrNoRows {
+			return echo.ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+		iconCache[name] = data		
 	}
-	if err != nil {
-		return err
-	}
+
 
 	mime := ""
 	switch true {
