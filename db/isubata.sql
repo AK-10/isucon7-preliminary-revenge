@@ -12,7 +12,7 @@ CREATE TABLE image (
   id BIGINT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
   name VARCHAR(191),
   data LONGBLOB,
-  KEY name_idx (name)
+  PRIMARY KEY name_idx (name)
 ) Engine=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE channel (
