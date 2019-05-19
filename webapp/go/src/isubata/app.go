@@ -289,6 +289,7 @@ func queryChannels() ([]int64, error) {
 	return res, err
 }
 
+// 既読
 func queryHaveRead(userID, chID int64) (int64, error) {
 	type HaveRead struct {
 		UserID    int64     `db:"user_id"`

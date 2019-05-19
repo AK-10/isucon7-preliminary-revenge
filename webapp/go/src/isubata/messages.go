@@ -57,6 +57,7 @@ func getMessage(c echo.Context) error {
 	response := make([]map[string]interface{}, 0)
 	for i := len(messages) - 1; i >= 0; i-- {
 		m := messages[i]
+		// ⬇️くさい
 		r, err := jsonifyMessage(m)
 		if err != nil {
 			return err
@@ -76,3 +77,6 @@ func getMessage(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, response)
 }
+
+
+// "INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at) VALUES (?, ?, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()"
