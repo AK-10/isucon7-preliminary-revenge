@@ -31,7 +31,7 @@ function get_channel_id() {
             return ar[i + 1]
         }
     }
-    console.log(ar)
+    // console.log(ar)
     return "1"
 }
 
@@ -123,7 +123,7 @@ $(document).ready(function() {
             if (loading) return
             loading = true
             fetch_unread(function(json) {
-                console.log(json)
+                // console.log(json)
                 channel_id = get_channel_id()
                 updated = false
                 json.forEach(function(channel) {
