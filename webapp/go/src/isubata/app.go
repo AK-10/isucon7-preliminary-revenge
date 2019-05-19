@@ -269,8 +269,8 @@ func postMessage(c echo.Context) error {
 
 func jsonifyMessage(m Message) (map[string]interface{}, error) {
 	u := User{}
-	err := db.Get(&u, "SELECT name, display_name, avatar_icon FROM user WHERE id = ?",
-		m.UserID)
+	// err := db.Get(&u, "SELECT name, display_name, avatar_icon FROM user WHERE id = ?", m.UserID)
+	err := db.QueryRow("SELECT name, display_name, avatar_icon FROM user WHERE id = ?", m.UserID).Scan(&u.Name, &u.DisplayName, &u.AvatarIcon)
 	if err != nil {
 		return nil, err
 	}
