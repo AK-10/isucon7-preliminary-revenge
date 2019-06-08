@@ -339,6 +339,83 @@ func fetchUnread(c echo.Context) error {
 	return c.JSON(http.StatusOK, resp)
 }
 
+func getHistoryV2(c echo.Context) error {
+	chID, err := strconv.ParseInt(c.Param("channel_id"), 10, 64)
+	if err != nil || chID <= 0 {
+		return ErrBadReqeust
+	}
+
+	user, err := ensureLogin(c)
+	if user == nil {
+		return err
+	}
+
+	var page int64
+	pageStr := c.QueryParam("page")
+	if pageStr == "" {
+		page = 1
+	} else {
+		page, err = strconv.ParseInt(pageStr, 10, 64)
+		if err != nil || page < 1 {
+			return ErrBadReqeust
+		}
+	}
+
+	const N = 20
+	var cnt int64
+	err = db.Get(&cnt, "SELECT COUNT(id) as cnt FROM message WHERE channel_id = ?", chID)
+	if err != nil {
+		return err
+	}
+	maxPage := int64(cnt+N-1) / N
+	if maxPage == 0 {
+		maxPage = 1
+	}
+	if page > maxPage {
+		return ErrBadReqeust
+	}
+
+	rows, err := db.Queryx(
+		"SELECT m.id, m.content, m.created_at, u.name, u.display_name, u.avatar_icon FROM message m INNER JOIN user u ON m.user_id = u.id WHERE AND m.channel_id = ? ORDER BY m.id DESC LIMIT ? OFFSET ?",
+		chID, N, (page-1)*N)
+	defer rows.Close()
+	if err != nil {
+		return err
+	}
+
+	msgs := []Message{}
+	users := []User{}
+
+	for rows.Next() {
+		var msg Message
+		var u User
+		err = rows.Scan(msg.ID, msg.Content, msg.CreatedAt, u.Name, u.DisplayName, u.AvatarIcon)
+		msgs = append(msgs, msg)
+		users = append(users, u)
+	}
+
+	mjson := make([]map[string]interface{}, 0)
+	for i := len(msgs) - 1; i >= 0; i-- {
+		r := makeJSONMessage(msgs[i], users[i])
+		mjson = append(mjson, r)
+	}
+
+	channels := []ChannelInfo{}
+	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
+	if err != nil {
+		return err
+	}
+
+	return c.Render(http.StatusOK, "history", map[string]interface{}{
+		"ChannelID": chID,
+		"Channels":  channels,
+		"Messages":  mjson,
+		"MaxPage":   maxPage,
+		"Page":      page,
+		"User":      user,
+	})
+}
+
 func getHistory(c echo.Context) error {
 	chID, err := strconv.ParseInt(c.Param("channel_id"), 10, 64)
 	if err != nil || chID <= 0 {
@@ -383,6 +460,7 @@ func getHistory(c echo.Context) error {
 		return err
 	}
 
+	// N+1
 	mjson := make([]map[string]interface{}, 0)
 	for i := len(messages) - 1; i >= 0; i-- {
 		r, err := jsonifyMessage(messages[i])
@@ -584,8 +662,8 @@ func main() {
 	e.GET("/message", getMessage)
 	e.POST("/message", postMessage)
 	e.GET("/fetch", fetchUnread)
-	e.GET("/history/:channel_id", getHistory)
-
+	// e.GET("/history/:channel_id", getHistory)
+	e.GET("/history/:channel_id", getHistoryV2)
 	e.GET("/profile/:user_name", getProfile)
 	e.POST("/profile", postProfile)
 
