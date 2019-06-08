@@ -7,7 +7,6 @@ import (
 	"net/http"
 )
 
- 
 var iconCache = map[string]([]byte){}
 
 func getIcon(c echo.Context) error {
