@@ -75,7 +75,7 @@ func init() {
 			break
 		}
 		log.Println(err)
-		time.Sleep(time.Second * 3)
+		time.Sleep(time.Second)
 	}
 
 	db.SetMaxOpenConns(20)
@@ -163,6 +163,22 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM channel WHERE id > 10")
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
+	// rows, err := db.Queryx("SELECT name, data FROM image")
+	// if err != nil {
+	// 	return err
+	// }
+	
+	// for rows.Next() {
+	// 	var name string
+	// 	var data []byte
+	// 	if err = rows.Scan(&name, data); err != nil {
+	// 		return err
+	// 	}
+	// 	if err = createIcon(name, data); err != nil {
+	// 		return err
+	// 	}
+	// }
+
 	return c.String(204, "")
 }
 
@@ -301,7 +317,7 @@ func fetchUnread(c echo.Context) error {
 		return c.NoContent(http.StatusForbidden)
 	}
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 3)
 
 	// idだけ
 	channels, err := queryChannels()
@@ -603,12 +619,14 @@ func postProfile(c echo.Context) error {
 	}
 
 	if avatarName != "" && len(avatarData) > 0 {
+		if err = createIcon(avatarName, avatarData); err != nil {
+			return err
+		}
 		_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
 		if err != nil {
 			return err
 		}
-		// iconを作成するときにキャッシュする
-		iconCache[avatarName] = avatarData
+
 		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
 		if err != nil {
 			return err
@@ -625,6 +643,20 @@ func postProfile(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, "/")
 }
 
+func createIcon(fileName string, data []byte) error {
+	file, err := os.Create("/home/isucon/isubata/webapp/public/icons/" + fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write(data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func tAdd(a, b int64) int64 {
 	return a + b
