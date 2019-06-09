@@ -662,8 +662,8 @@ func main() {
 	e.GET("/message", getMessage)
 	e.POST("/message", postMessage)
 	e.GET("/fetch", fetchUnread)
-	e.GET("/history/:channel_id", getHistory)
-	// e.GET("/history/:channel_id", getHistoryV2)
+	// e.GET("/history/:channel_id", getHistory)
+	e.GET("/history/:channel_id", getHistoryV2)
 	e.GET("/profile/:user_name", getProfile)
 	e.POST("/profile", postProfile)
 
