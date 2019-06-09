@@ -74,54 +74,6 @@ func jsonifyMessage(m Message) (map[string]interface{}, error) {
 	return r, nil
 }
 
-
-// func getMessage(c echo.Context) error {
-// 	userID := sessUserID(c)
-// 	if userID == 0 {
-// 		return c.NoContent(http.StatusForbidden)
-// 	}
-
-// 	chanID, err := strconv.ParseInt(c.QueryParam("channel_id"), 10, 64)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	lastID, err := strconv.ParseInt(c.QueryParam("last_message_id"), 10, 64)
-// 	if err != nil {
-// 		return err
-// 	}
-
-
-// 	response := make([]map[string]interface{}, 0)
-// 	rows, err := db.Query("SELECT m.id, m.content, m.created_at, u.name, u.display_name, u.avatar_icon FROM message m INNER JOIN user u ON m.user_id = u.id WHERE m.id > ? AND m.channel_id = ? ORDER BY m.id DESC LIMIT 100", lastID, chanID)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer rows.Close()
-	
-// 	for rows.Next() {
-// 		var message Message
-// 		var user User
-// 		err := rows.Scan(&message.ID, &message.Content, &message.CreatedAt, &user.Name, &user.DisplayName, &user.AvatarIcon)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		r := makeJSONMessage(message, user)
-// 		
-// 	}
-
-// 	if len(messages) > 0 {
-// 		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
-// 			" VALUES (?, ?, ?, NOW(), NOW())"+
-// 			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
-// 			userID, chanID, messages[0].ID, messages[0].ID)
-// 		if err != nil {
-// 			return err
-// 		}
-// 	}
-
-// 	return c.JSON(http.StatusOK, response)
-// }
-
 func makeJSONMessage(m Message, u User) map[string]interface{} {
 	r := make(map[string]interface{})
 	r["id"] = m.ID
@@ -164,6 +116,9 @@ func getMessage(c echo.Context) error {
 	// }
 
 	messages, err := queryMessagesWithUser(chanID, lastID)
+	if err != nil {
+		return err
+	}
 	
 	response := make([]map[string]interface{}, 0)
 	for i := len(messages) - 1; i >= 0; i-- {
