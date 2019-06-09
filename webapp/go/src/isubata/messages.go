@@ -29,7 +29,7 @@ func addMessage(channelID, userID int64, content string) (int64, error) {
 
 func queryMessagesWithUser(chanID, lastID int64) ([]Message, error) {
 	msgs := []Message{}
-	rows, err := db.Queryx("SELECT m.*, u.* FROM message m INNER JOIN user u ON m.user_id = u.id WHERE m.id > ? AND m.channel_id = ? ORDER BY m.id DESC LIMIT 100")
+	rows, err := db.Queryx("SELECT m.*, u.* FROM message m INNER JOIN user u ON m.user_id = u.id WHERE m.id > ? AND m.channel_id = ? ORDER BY m.id DESC LIMIT 100", lastID, chanID)
 	if err != nil {
 		return nil, err
 	}
