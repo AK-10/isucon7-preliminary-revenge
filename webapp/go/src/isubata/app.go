@@ -75,7 +75,7 @@ func init() {
 			break
 		}
 		log.Println(err)
-		time.Sleep(time.Second)
+		time.Sleep(time.Second)
 	}
 
 	db.SetMaxOpenConns(20)
@@ -704,7 +704,7 @@ func main() {
 
 	e.GET("/add_channel", getAddChannel)
 	e.POST("/add_channel", postAddChannel)
-	e.GET("/icons/:file_name", getIcon)
+	// e.GET("/icons/:file_name", getIcon)
 
 	e.Start(":5000")
 }
