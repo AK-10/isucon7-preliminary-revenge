@@ -317,7 +317,7 @@ func fetchUnread(c echo.Context) error {
 		return c.NoContent(http.StatusForbidden)
 	}
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 3)
 
 	// idだけ
 	channels, err := queryChannels()
