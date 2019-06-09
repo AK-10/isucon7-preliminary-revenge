@@ -378,10 +378,10 @@ func getHistoryV2(c echo.Context) error {
 	rows, err := db.Queryx(
 		"SELECT m.id, m.content, m.created_at, u.name, u.display_name, u.avatar_icon FROM message m INNER JOIN user u ON m.user_id = u.id WHERE AND m.channel_id = ? ORDER BY m.id DESC LIMIT ? OFFSET ?",
 		chID, N, (page-1)*N)
-	defer rows.Close()
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 
 	msgs := []Message{}
 	users := []User{}
