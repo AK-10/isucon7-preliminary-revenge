@@ -390,6 +390,9 @@ func getHistoryV2(c echo.Context) error {
 		var msg Message
 		var u User
 		err = rows.Scan(&msg.ID, &msg.Content, &msg.CreatedAt, &u.Name, &u.DisplayName, &u.AvatarIcon)
+		if err != nil {
+			return err
+		}
 		msgs = append(msgs, msg)
 		users = append(users, u)
 	}
