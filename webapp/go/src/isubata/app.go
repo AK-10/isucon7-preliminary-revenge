@@ -670,8 +670,8 @@ func main() {
 	e.GET("/profile/:user_name", getProfile)
 	e.POST("/profile", postProfile)
 
-	e.GET("add_channel", getAddChannel)
-	e.POST("add_channel", postAddChannel)
+	e.GET("/add_channel", getAddChannel)
+	e.POST("/add_channel", postAddChannel)
 	e.GET("/icons/:file_name", getIcon)
 
 	e.Start(":5000")
