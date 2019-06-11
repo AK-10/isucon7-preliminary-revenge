@@ -5,17 +5,29 @@ import (
 	"github.com/labstack/echo"
 	"strings"
 	"net/http"
+	"github.com/gomodule/redigo/redis"
 )
 
-var iconCache = map[string]([]byte){}
+var iconCache = map[string][]byte{}
+
 
 func getIcon(c echo.Context) error {
 	var name string
 	var data []byte
+
+	conn, err := redis.Dial("tcp", "127.0.0.1:6379")
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
 	// まずキャッシュから取り出す
 	if len(iconCache[c.Param("file_name")]) > 0 {
 		name = c.Param("file_name")
-		data = iconCache[c.Param("file_name")]
+		data, err = redis.Bytes(conn.Do("GET", name))
+		if err != nil {
+			return err
+		}
 	} else {
 		err := db.QueryRow("SELECT name, data FROM image WHERE name = ?",
 			c.Param("file_name")).Scan(&name, &data)
@@ -25,7 +37,9 @@ func getIcon(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		iconCache[name] = data
+		if err := setIcon(name, data); err != nil {
+			return err
+		}
 	}
 
 	mime := ""
@@ -40,4 +54,19 @@ func getIcon(c echo.Context) error {
 		return echo.ErrNotFound
 	}
 	return c.Blob(http.StatusOK, mime, data)
+}
+
+func setIcon(name string, data []byte) error {
+	conn, err := redis.Dial("tcp", "127.0.0.1:6379")
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	_, err = conn.Do("SET", name, string(data))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
