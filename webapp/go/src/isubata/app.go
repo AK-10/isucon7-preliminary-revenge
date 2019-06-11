@@ -623,10 +623,10 @@ func postProfile(c echo.Context) error {
 			return err
 		}
 
-		// _, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
-		// if err != nil {
-		// 	return err
-		// }
+		_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
+		if err != nil {
+			return err
+		}
 
 		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
 		if err != nil {
