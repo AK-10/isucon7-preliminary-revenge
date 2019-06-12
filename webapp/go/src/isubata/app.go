@@ -75,7 +75,7 @@ func init() {
 			break
 		}
 		log.Println(err)
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(time.Second)
 	}
 
 	db.SetMaxOpenConns(20)
@@ -317,7 +317,7 @@ func fetchUnread(c echo.Context) error {
 		return c.NoContent(http.StatusForbidden)
 	}
 
-	time.Sleep(time.Second * 3)
+	time.Sleep(10 * time.Millisecond)
 
 	// idだけ
 	channels, err := queryChannels()
