@@ -32,6 +32,7 @@ CREATE TABLE message (
   created_at DATETIME NOT NULL,
   KEY channel_id_index(channel_id),
   KEY user_id_index(user_id),
+  KEY channel_and_id_index(channel_id, id),
   KEY channel_and_user_index(channel_id, user_id)
 ) Engine=InnoDB DEFAULT CHARSET=utf8mb4;
 
