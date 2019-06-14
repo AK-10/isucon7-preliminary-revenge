@@ -163,18 +163,16 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM channel WHERE id > 10")
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
-	rows, err := db.Queryx("SELECT name, data FROM image")
-	if err != nil {
-		return err
+
+	var images []struct {
+		Name string
+		Data []byte
 	}
 
-	for rows.Next() {
-		var name string
-		var data []byte
-		if err = rows.Scan(&name, data); err != nil {
-			return err
-		}
-		if err = createIcon(name, data); err != nil {
+	db.Select(&images, "SELECT name, data FROM image")
+
+	for _, image := range images {
+		if err := createIcon(image.Name, image.Data); err != nil {
 			return err
 		}
 	}
