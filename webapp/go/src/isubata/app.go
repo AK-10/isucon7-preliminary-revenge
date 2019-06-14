@@ -27,6 +27,7 @@ import (
 
 const (
 	avatarMaxBytes = 1 * 1024 * 1024
+	iconBasePath   = "/home/isucon/isubata/webapp/public/icons/"
 )
 
 var (
@@ -82,7 +83,6 @@ func init() {
 	db.SetConnMaxLifetime(5 * time.Minute)
 	log.Printf("Succeeded to connect db.")
 }
-
 
 func sessUserID(c echo.Context) int64 {
 	sess, _ := session.Get("session", c)
@@ -163,21 +163,21 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM channel WHERE id > 10")
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
-	// rows, err := db.Queryx("SELECT name, data FROM image")
-	// if err != nil {
-	// 	return err
-	// }
-	
-	// for rows.Next() {
-	// 	var name string
-	// 	var data []byte
-	// 	if err = rows.Scan(&name, data); err != nil {
-	// 		return err
-	// 	}
-	// 	if err = createIcon(name, data); err != nil {
-	// 		return err
-	// 	}
-	// }
+	rows, err := db.Queryx("SELECT name, data FROM image")
+	if err != nil {
+		return err
+	}
+
+	for rows.Next() {
+		var name string
+		var data []byte
+		if err = rows.Scan(&name, data); err != nil {
+			return err
+		}
+		if err = createIcon(name, data); err != nil {
+			return err
+		}
+	}
 
 	return c.String(204, "")
 }
@@ -619,10 +619,9 @@ func postProfile(c echo.Context) error {
 	}
 
 	if avatarName != "" && len(avatarData) > 0 {
-		if err := setIcon(avatarName, avatarData); err != nil {
+		if err := createIcon(avatarName, avatarData); err != nil {
 			return err
 		}
-
 		// _, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
 		// if err != nil {
 		// 	return err
@@ -642,21 +641,6 @@ func postProfile(c echo.Context) error {
 	}
 
 	return c.Redirect(http.StatusSeeOther, "/")
-}
-
-func createIcon(fileName string, data []byte) error {
-	file, err := os.Create("/home/isucon/isubata/webapp/public/icons/" + fileName)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = file.Write(data)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func tAdd(a, b int64) int64 {
@@ -705,7 +689,7 @@ func main() {
 
 	e.GET("/add_channel", getAddChannel)
 	e.POST("/add_channel", postAddChannel)
-	e.GET("/icons/:file_name", getIcon)
+	// e.GET("/icons/:file_name", getIcon)
 
 	e.Start(":5000")
 }

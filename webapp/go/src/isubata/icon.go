@@ -2,11 +2,28 @@ package main
 
 import (
 	"database/sql"
-	"github.com/labstack/echo"
-	"strings"
 	"net/http"
+	"os"
+	"strings"
+
 	"github.com/gomodule/redigo/redis"
+	"github.com/labstack/echo"
 )
+
+func createIcon(fileName string, data []byte) error {
+	file, err := os.Create(iconBasePath + fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write(data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func getIcon(c echo.Context) error {
 	var name string
@@ -18,13 +35,11 @@ func getIcon(c echo.Context) error {
 	}
 	defer conn.Close()
 
-	// まずキャッシュから取り出す
-	
 	name = c.Param("file_name")
 	data, err = redis.Bytes(conn.Do("GET", name))
 	if err != redis.ErrNil {
 		err := db.QueryRow("SELECT name, data FROM image WHERE name = ?",
-		c.Param("file_name")).Scan(&name, &data)
+			c.Param("file_name")).Scan(&name, &data)
 		if err == sql.ErrNoRows {
 			return echo.ErrNotFound
 		}
