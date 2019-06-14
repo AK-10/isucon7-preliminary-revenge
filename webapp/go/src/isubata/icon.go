@@ -11,7 +11,7 @@ import (
 )
 
 func createIcon(fileName string, data []byte) error {
-	if err := ioutil.WriteFile(iconBasePath+fileName, data, 0777); err != nil {
+	if err := ioutil.WriteFile(iconBasePath+fileName, data, 0664); err != nil {
 		return err
 	}
 	return nil
