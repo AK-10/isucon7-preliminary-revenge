@@ -2,8 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gomodule/redigo/redis"
@@ -11,17 +11,9 @@ import (
 )
 
 func createIcon(fileName string, data []byte) error {
-	file, err := os.Create(iconBasePath + fileName)
-	if err != nil {
+	if err := ioutil.WriteFile(iconBasePath+fileName, data, 0777); err != nil {
 		return err
 	}
-	defer file.Close()
-
-	_, err = file.Write(data)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
