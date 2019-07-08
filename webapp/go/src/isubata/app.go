@@ -648,6 +648,7 @@ func postAddChannel(c echo.Context) error {
 
 	userNum, err := getUserNumFromRedis()
 	if err != nil {
+		println("Err: getUserNumFromRedis on postAddChannel")
 		return err
 	}
 
