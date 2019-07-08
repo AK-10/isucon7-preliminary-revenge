@@ -16,7 +16,7 @@ const (
 var (
 	redisPool = &redis.Pool{
 		MaxIdle:     3,
-		MaxActive:   6,
+		MaxActive:   18,
 		IdleTimeout: 240 * time.Second,
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", "127.0.0.1:6379") },
 	}
