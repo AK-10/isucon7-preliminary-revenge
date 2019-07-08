@@ -137,6 +137,7 @@ func getMessage(c echo.Context) error {
 			return err
 		}
 		if err := setLastIDtoRedis(chanID, userID, messages[0].ID); err != nil {
+			println("getMessage: ", err)
 			return err
 		}
 	}
