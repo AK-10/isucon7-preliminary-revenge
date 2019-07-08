@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gomodule/redigo/redis"
+
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
@@ -164,6 +166,13 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
 
+	initImage()
+	initLastIDCache()
+
+	return c.String(204, "")
+}
+
+func initImage() error {
 	var images []struct {
 		Name string
 		Data []byte
@@ -176,8 +185,7 @@ func getInitialize(c echo.Context) error {
 			return err
 		}
 	}
-
-	return c.String(204, "")
+	return nil
 }
 
 func getIndex(c echo.Context) error {
@@ -278,6 +286,10 @@ func postMessage(c echo.Context) error {
 		return err
 	}
 
+	if err := incrementMessageNumtoRedis(chanID); err != nil {
+		return err
+	}
+
 	return c.NoContent(204)
 }
 
@@ -285,6 +297,31 @@ func queryChannels() ([]int64, error) {
 	res := []int64{}
 	err := db.Select(&res, "SELECT id FROM channel")
 	return res, err
+}
+
+func initLastIDCache() error {
+	channels, err := queryChannels()
+	if err != nil {
+		return err
+	}
+	users := []int64{}
+	if err := db.Select(&users, "SELECT id FROM user"); err != nil {
+		return err
+	}
+	for _, cid := range channels {
+		for _, uid := range users {
+			lastID, err := queryHaveRead(uid, cid)
+			if err != nil {
+				return err
+			}
+			if err = setLastIDtoRedis(cid, uid, lastID); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+
 }
 
 // 既読
@@ -326,9 +363,15 @@ func fetchUnread(c echo.Context) error {
 	resp := []map[string]interface{}{}
 
 	for _, chID := range channels {
-		lastID, err := queryHaveRead(userID, chID)
-		if err != nil {
-			return err
+		lastID, err := getLastIDFromRedis(chID, userID)
+		if err == redis.ErrNil {
+			lastID, err = queryHaveRead(userID, chID)
+			if err != nil {
+				return err
+			}
+			if err = setLastIDtoRedis(chID, userID, lastID); err != nil {
+				return err
+			}
 		}
 
 		var cnt int64
@@ -337,9 +380,10 @@ func fetchUnread(c echo.Context) error {
 				"SELECT COUNT(id) as cnt FROM message WHERE channel_id = ? AND ? < id",
 				chID, lastID)
 		} else {
-			err = db.Get(&cnt,
-				"SELECT COUNT(id) as cnt FROM message WHERE channel_id = ?",
-				chID)
+			cnt, err = getMessageNumFromRedis(chID)
+			if err != nil {
+				return err
+			}
 		}
 		if err != nil {
 			return err
