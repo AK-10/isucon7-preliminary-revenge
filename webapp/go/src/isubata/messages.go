@@ -1,10 +1,11 @@
 package main
 
 import (
-	"time"
-	"github.com/labstack/echo"
 	"net/http"
 	"strconv"
+	"time"
+
+	"github.com/labstack/echo"
 )
 
 type Message struct {
@@ -38,7 +39,7 @@ func queryMessagesWithUser(chanID, lastID int64) ([]Message, error) {
 	for rows.Next() {
 		var msg Message
 		var user User
-		
+
 		err = rows.Scan(&msg.ID, &msg.ChannelID, &msg.UserID, &msg.Content, &msg.CreatedAt, &user.ID, &user.Name, &user.Salt, &user.Password, &user.DisplayName, &user.AvatarIcon, &user.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -56,7 +57,6 @@ func queryMessages(chanID, lastID int64) ([]Message, error) {
 		lastID, chanID)
 	return msgs, err
 }
-
 
 func jsonifyMessage(m Message) (map[string]interface{}, error) {
 	u := User{}
@@ -119,7 +119,7 @@ func getMessage(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	
+
 	response := make([]map[string]interface{}, 0)
 	for i := len(messages) - 1; i >= 0; i-- {
 		m := messages[i]
@@ -134,6 +134,9 @@ func getMessage(c echo.Context) error {
 			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
 			userID, chanID, messages[0].ID, messages[0].ID)
 		if err != nil {
+			return err
+		}
+		if err := setLastIDtoRedis(chanID, userID, messages[0].ID); err != nil {
 			return err
 		}
 	}
