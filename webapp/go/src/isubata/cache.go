@@ -10,6 +10,7 @@ import (
 const (
 	haveReadPrefix   = "HAVE-READ-"
 	messageNumPrefix = "MSG-NUM-"
+	userNumKey       = "USER-NUM"
 )
 
 var (
@@ -79,6 +80,33 @@ func getMessageNumFromRedis(chanID int64) (int64, error) {
 	conn := redisPool.Get()
 	defer conn.Close()
 	key := makeMSGNumKey(chanID)
+	num, err := redis.Int64(conn.Do("GET", key))
+	return num, err
+}
+
+func incrementUserNumtoRedis() error {
+	oldNum, err := getUserNumFromRedis()
+	if err != nil {
+		return err
+	}
+	if err = setUserNumFromRedis(oldNum + 1); err != nil {
+		return err
+	}
+	return nil
+}
+
+func setUserNumFromRedis(num int64) error {
+	conn := redisPool.Get()
+	defer conn.Close()
+	key := userNumKey
+	_, err := conn.Do("SET", key, strconv.Itoa(int(num)))
+	return err
+}
+
+func getUserNumFromRedis() (int64, error) {
+	conn := redisPool.Get()
+	defer conn.Close()
+	key := userNumKey
 	num, err := redis.Int64(conn.Do("GET", key))
 	return num, err
 }

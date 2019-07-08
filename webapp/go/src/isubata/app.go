@@ -154,6 +154,9 @@ func register(name, password string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	if err = incrementUserNumtoRedis(); err != nil {
+		return 0, err
+	}
 	return res.LastInsertId()
 }
 
@@ -305,9 +308,15 @@ func initLastIDCacheAndMessageNumCache() error {
 		return err
 	}
 	users := []int64{}
+
 	if err := db.Select(&users, "SELECT id FROM user"); err != nil {
 		return err
 	}
+
+	if err = setUserNumFromRedis(int64(len(users))); err != nil {
+		return err
+	}
+
 	for _, cid := range channels {
 		for _, uid := range users {
 			lastID, err := queryHaveRead(uid, cid)
@@ -378,6 +387,7 @@ func fetchUnread(c echo.Context) error {
 				return err
 			}
 			if err = setLastIDtoRedis(chID, userID, lastID); err != nil {
+				println("setLastIDtoRedis")
 				return err
 			}
 		}
@@ -389,8 +399,15 @@ func fetchUnread(c echo.Context) error {
 				chID, lastID)
 		} else {
 			cnt, err = getMessageNumFromRedis(chID)
-			if err != nil {
-				return err
+			if err == redis.ErrNil {
+				err = db.Get(&cnt,
+					"SELECT COUNT(id) as cnt FROM message WHERE channel_id = ?")
+				if err != nil {
+					return err
+				}
+				if err = setMessageNumFromRedis(chID, cnt); err != nil {
+					return err
+				}
 			}
 		}
 		if err != nil {
@@ -627,6 +644,18 @@ func postAddChannel(c echo.Context) error {
 	if err = setMessageNumFromRedis(lastID, 0); err != nil {
 		return err
 	}
+
+	userNum, err := getUserNumFromRedis()
+	if err != nil {
+		return err
+	}
+
+	for uid := userNum; uid > 0; uid-- {
+		if err = setLastIDtoRedis(lastID, uid, 0); err != nil {
+			return err
+		}
+	}
+
 	return c.Redirect(http.StatusSeeOther,
 		fmt.Sprintf("/channel/%v", lastID))
 }
