@@ -381,7 +381,7 @@ func fetchUnread(c echo.Context) error {
 	for _, chID := range channels {
 		lastID, err := getLastIDFromRedis(chID, userID)
 		if err == redis.ErrNil {
-			println("redis.ErrNil")
+			println("lastID: redis.ErrNil")
 			lastID, err = queryHaveRead(userID, chID)
 			if err != nil {
 				return err
@@ -400,6 +400,7 @@ func fetchUnread(c echo.Context) error {
 		} else {
 			cnt, err = getMessageNumFromRedis(chID)
 			if err == redis.ErrNil {
+				println("count: redis.ErrNil")
 				err = db.Get(&cnt,
 					"SELECT COUNT(id) as cnt FROM message WHERE channel_id = ?")
 				if err != nil {
