@@ -372,6 +372,7 @@ func fetchUnread(c echo.Context) error {
 	for _, chID := range channels {
 		lastID, err := getLastIDFromRedis(chID, userID)
 		if err == redis.ErrNil {
+			println("redis.ErrNil")
 			lastID, err = queryHaveRead(userID, chID)
 			if err != nil {
 				return err
@@ -623,6 +624,9 @@ func postAddChannel(c echo.Context) error {
 		return err
 	}
 	lastID, _ := res.LastInsertId()
+	if err = setMessageNumFromRedis(lastID, 0); err != nil {
+		return err
+	}
 	return c.Redirect(http.StatusSeeOther,
 		fmt.Sprintf("/channel/%v", lastID))
 }
