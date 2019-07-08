@@ -167,7 +167,7 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM haveread")
 
 	initImage()
-	initLastIDCache()
+	initLastIDCacheAndMessageNumCache()
 
 	return c.String(204, "")
 }
@@ -299,7 +299,7 @@ func queryChannels() ([]int64, error) {
 	return res, err
 }
 
-func initLastIDCache() error {
+func initLastIDCacheAndMessageNumCache() error {
 	channels, err := queryChannels()
 	if err != nil {
 		return err
@@ -318,10 +318,17 @@ func initLastIDCache() error {
 				return err
 			}
 		}
+		var cnt int64
+		if err = db.Get(&cnt,
+			"SELECT COUNT(id) as cnt FROM message WHERE channel_id = ?", cid); err != nil {
+			return err
+		}
+		if err = setMessageNumFromRedis(cid, cnt); err != nil {
+			return err
+		}
+
 	}
-
 	return nil
-
 }
 
 // 既読
