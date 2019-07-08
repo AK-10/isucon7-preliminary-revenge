@@ -129,13 +129,13 @@ func getMessage(c echo.Context) error {
 
 	// 既読としてhavereadに追加
 	if len(messages) > 0 {
-		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
-			" VALUES (?, ?, ?, NOW(), NOW())"+
-			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
-			userID, chanID, messages[0].ID, messages[0].ID)
-		if err != nil {
-			return err
-		}
+		// _, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
+		// 	" VALUES (?, ?, ?, NOW(), NOW())"+
+		// 	" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
+		// 	userID, chanID, messages[0].ID, messages[0].ID)
+		// if err != nil {
+		// 	return err
+		// }
 		if err := setLastIDtoRedis(chanID, userID, messages[0].ID); err != nil {
 			println("getMessage: ", err)
 			return err
