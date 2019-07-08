@@ -320,7 +320,9 @@ func initLastIDCacheAndMessageNumCache() error {
 	for _, cid := range channels {
 		for _, uid := range users {
 			lastID, err := queryHaveRead(uid, cid)
-			if err != nil {
+			if err == sql.ErrNoRows {
+				setLastIDtoRedis(cid, uid, 0)
+				println(err)
 				return err
 			}
 			if err = setLastIDtoRedis(cid, uid, lastID); err != nil {
