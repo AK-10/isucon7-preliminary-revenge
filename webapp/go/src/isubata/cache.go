@@ -103,6 +103,26 @@ func decrementMessageNumAtGC(chanID int64) error {
 	return nil
 }
 
+func setUserNumToGC(num int64) {
+	c.Set(userNumKey, num, cache.DefaultExpiration)
+}
+
+func getUserNumFromGC() (int64, error) {
+	if num, found := c.Get(userNumKey); found {
+		return num.(int64), nil
+	}
+	return -1, errors.New("go-cache: key not found")
+}
+
+func incrementUserNumtoGC() error {
+	oldNum, err := getUserNumFromGC()
+	if err != nil {
+		return err
+	}
+	setUserNumToGC(oldNum + 1)
+	return nil
+}
+
 func incrementMessageNumtoRedis(chanID int64) error {
 	oldNum, err := getMessageNumFromRedis(chanID)
 	if err != nil {
