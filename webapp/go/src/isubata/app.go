@@ -50,14 +50,14 @@ func init() {
 	crand.Read(seedBuf)
 	rand.Seed(int64(binary.LittleEndian.Uint64(seedBuf)))
 
-	db_host := os.Getenv("ISUBATA_DB_HOST")
-	if db_host == "" {
-		db_host = "127.0.0.1"
-	}
-	db_port := os.Getenv("ISUBATA_DB_PORT")
-	if db_port == "" {
-		db_port = "3306"
-	}
+	// db_host := os.Getenv("ISUBATA_DB_HOST")
+	// if db_host == "" {
+	// 	db_host = "127.0.0.1"
+	// }
+	// db_port := os.Getenv("ISUBATA_DB_PORT")
+	// if db_port == "" {
+	// 	db_port = "3306"
+	// }
 	db_user := os.Getenv("ISUBATA_DB_USER")
 	if db_user == "" {
 		db_user = "root"
@@ -67,8 +67,9 @@ func init() {
 		db_password = ":" + db_password
 	}
 
-	dsn := fmt.Sprintf("%s%s@tcp(%s:%s)/isubata?parseTime=true&loc=Local&charset=utf8mb4",
-		db_user, db_password, db_host, db_port)
+	dsn := fmt.Sprintf("%s%s@unix(/var/run/mysqld/mysqld.sock)/isubata?parseTime=true&loc=Local&charset=utf8mb4", db_user, db_password)
+	// dsn := fmt.Sprintf("%s%s@tcp(%s:%s)/isubata?parseTime=true&loc=Local&charset=utf8mb4",
+	// db_user, db_password, db_host, db_port)
 
 	log.Printf("Connecting to db: %q", dsn)
 	db, _ = sqlx.Connect("mysql", dsn)
@@ -381,7 +382,6 @@ func fetchUnread(c echo.Context) error {
 	resp := []map[string]interface{}{}
 
 	for _, chID := range channels {
-
 		lastID, err := getLastIDFromGC(chID, userID)
 		if err != nil {
 			lastID, err = queryHaveRead(userID, chID)
