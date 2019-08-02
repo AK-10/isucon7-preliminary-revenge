@@ -170,7 +170,7 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM haveread")
 
 	initImage()
-	initLastIDCacheAndMessageNumCache()
+	// initLastIDCacheAndMessageNumCache()
 
 	return c.String(204, "")
 }
