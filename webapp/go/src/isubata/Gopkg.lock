@@ -112,6 +112,14 @@
   version = "v0.0.3"
 
 [[projects]]
+  digest = "1:4c0404dc03d974acd5fcd8b8d3ce687b13bd169db032b89275e8b9d77b98ce8c"
+  name = "github.com/patrickmn/go-cache"
+  packages = ["."]
+  pruneopts = ""
+  revision = "a3647f8e31d79543b2d0f0ae2fe5c379d72cedc0"
+  version = "v2.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:857a9ecd5cb13379ecc8f798f6e6b6b574c98b9355657d91e068275f1120aaf7"
   name = "github.com/valyala/bytebufferpool"
@@ -157,6 +165,7 @@
     "github.com/labstack/echo",
     "github.com/labstack/echo-contrib/session",
     "github.com/labstack/echo/middleware",
+    "github.com/patrickmn/go-cache",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

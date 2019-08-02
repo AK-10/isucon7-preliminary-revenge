@@ -381,17 +381,14 @@ func fetchUnread(c echo.Context) error {
 	resp := []map[string]interface{}{}
 
 	for _, chID := range channels {
-		lastID, err := getLastIDFromRedis(chID, userID)
-		if err == redis.ErrNil {
-			println("lastID: redis.ErrNil")
+
+		lastID, err := getLastIDFromGC(chID, userID)
+		if err != nil {
 			lastID, err = queryHaveRead(userID, chID)
 			if err != nil {
 				return err
 			}
-			if err = setLastIDtoRedis(chID, userID, lastID); err != nil {
-				println("setLastIDtoRedis")
-				return err
-			}
+			setLastIDtoGC(chID, userID, lastID)
 		}
 
 		var cnt int64

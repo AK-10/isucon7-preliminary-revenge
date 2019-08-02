@@ -1,15 +1,22 @@
 package main
 
 import (
+	"errors"
 	"strconv"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/patrickmn/go-cache"
 )
 
 const (
 	haveReadPrefix   = "HAVE-READ-"
 	messageNumPrefix = "MSG-NUM-"
 	userNumKey       = "USER-NUM"
+)
+
+var (
+	c = cache.New(5*time.Minute, 10*time.Minute)
 )
 
 // var (
@@ -27,6 +34,17 @@ func makeMSGNumKey(chanID int64) string {
 
 func makeHaveReadKey(chanID, userID int64) string {
 	return haveReadPrefix + strconv.Itoa(int(chanID)) + "-" + strconv.Itoa(int(userID))
+}
+
+func setLastIDtoGC(chanID, userID, lastID int64) {
+	c.Set(makeHaveReadKey(chanID, userID), lastID, cache.DefaultExpiration)
+}
+
+func getLastIDFromGC(chanID, userID int64) (int64, error) {
+	if lastID, found := c.Get(makeHaveReadKey(chanID, userID)); found {
+		return lastID.(int64), nil
+	}
+	return -1, errors.New("go cache: key not found")
 }
 
 func setLastIDtoRedis(chanID, userID, lastID int64) error {
@@ -53,6 +71,36 @@ func getLastIDFromRedis(chanID, userID int64) (int64, error) {
 	key := makeHaveReadKey(chanID, userID)
 	lastID, err := redis.Int64(conn.Do("GET", key))
 	return lastID, err
+}
+
+func setMessageNumToGC(chanID, num int64) {
+	c.Set(makeMSGNumKey(chanID), num, cache.DefaultExpiration)
+}
+
+func getMessageNumFromGC(chanID int64) (int64, error) {
+	if lastID, found := c.Get(makeMSGNumKey(chanID)); found {
+		num := lastID.(int64)
+		return num, nil
+	}
+	return -1, errors.New("go-cache: key not found")
+}
+
+func incrementMessageNumAtGC(chanID int64) error {
+	oldNum, err := getMessageNumFromGC(chanID)
+	if err != nil {
+		return err
+	}
+	setMessageNumToGC(chanID, oldNum+1)
+	return nil
+}
+
+func decrementMessageNumAtGC(chanID int64) error {
+	oldNum, err := getMessageNumFromGC(chanID)
+	if err != nil {
+		return err
+	}
+	setMessageNumToGC(chanID, oldNum-1)
+	return nil
 }
 
 func incrementMessageNumtoRedis(chanID int64) error {
